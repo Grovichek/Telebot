@@ -13,4 +13,5 @@ from loader import bot
 
 @bot.message_handler(commands=['lowprice'])
 def lowprice(message: Message):
-    bot.reply_to(message, 'lowprice')
+    pass
+    # TODO

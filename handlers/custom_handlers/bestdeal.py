@@ -14,5 +14,6 @@ from loader import bot
 #   (не больше заранее определённого максимума)
 
 @bot.message_handler(commands=['bestdeal'])
-def lowprice(message: Message):
-    bot.reply_to(message, 'bestdeal')
+def bestdeal(message: Message):
+    pass
+    # TODO

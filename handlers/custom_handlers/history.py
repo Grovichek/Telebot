@@ -10,5 +10,6 @@ from loader import bot
 # 3. Отели, которые были найдены.
 
 @bot.message_handler(commands=['history'])
-def lowprice(message: Message):
-    bot.reply_to(message, 'history')
+def history(message: Message):
+    pass
+    # TODO
