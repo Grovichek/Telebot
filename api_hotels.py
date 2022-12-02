@@ -25,7 +25,8 @@ def get_locations(query: str, locale: str = 'ru_RU') -> dict | bool:
     else:
         return False
 
-
+# TODO что делает фукнкция ?
+# TODO list set dcit tuple в коде не используем
 def get_list(region_id: str,
              adults: int,
              results_size: int,

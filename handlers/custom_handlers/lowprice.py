@@ -51,6 +51,7 @@ def get_region_id(message: Message) -> None:
 
 @bot.message_handler(state=SearchStates.count_results)
 def get_count_results(message: Message) -> None:
+    # TODO ранее просил что всем методам\функциям вам нужно написать документацию
     if message.text.isdigit():
         with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
             if int(message.text) <= 10:
@@ -60,7 +61,7 @@ def get_count_results(message: Message) -> None:
                 data['count_results'] = 10
         bot.send_message(message.from_user.id, 'Показать фото найденных отелей?',
                          reply_markup=yes_no_keyboard('show'))
-        # TODO Этот хендлер возвращает колбэк, нужно ли для хендлера который его принимает писать состояние?
+        #  Этот хендлер возвращает колбэк, нужно ли для хендлера который его принимает писать состояние?
         #  технически состояние там не нужно, но без него бот остаётся в текущем состоянии и если например
         #  вместо нажатия инлайн кнопок писать что-то в чат будет отрабатывать этот хендлер
         #  как грамотно решить эту проблему? я решил создать дефолтное состояние MenuStates.home
@@ -68,6 +69,9 @@ def get_count_results(message: Message) -> None:
         #  -------------
         #  еще вопрос по поводу колбэк хендлеров, я пытался сделать универсальную клавиатуру, чтобы ее можно было
         #  переиспользовать, придумал передавать в нее префикс, это нормальная практика?
+        # TODO метод ничего не возвращает, а вызывает yes_no_keyboard
+        # TODO да можно использовать префиксы и на них писать хендлеры
+
     else:
         bot.send_message(message.from_user.id, 'Цифрами пожалуйста')
 
@@ -100,13 +104,19 @@ def get_count_photos(message: Message) -> None:
     else:
         bot.send_message(message.from_user.id, 'Цифрами пожалуйста')
 
-# TODO Всё что ниже, еще не придумано.
+#  Всё что ниже, еще не придумано.
 #  Просьба дать рекомендации по коду и архитектуре, я уже начал тонуть в том что сам же написал, как бы я не старался
 #  всё делать аккуратно, чем больше кода, тем больше бардака, мне всё время хочется всё удалить и начать с начала,
 #  нужно ли писать документацию к хендлерам? или просто в начале файла описать сценарий?
+
+# TODO что за функция что она делает ?
 def show_results(message: Message, photo: bool) -> None:
+    # TODO документацию да нужно писать, в документацию используйте описание вашего сценария, опешите логику
     bot.send_message(message.from_user.id, 'Погоди чуток')
     with bot.retrieve_data(message.from_user.id) as data:
+        # TODO что такое r?
+        # TODO что делает get_list? только не пишите что она получает список, мне пришлось перейти в эту функцию и
+        #  посмотреть потому что по названию не понятно
         r = get_list(region_id=data['region_id'],
                      adults=2,
                      results_size=data['count_results'],
