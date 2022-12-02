@@ -12,4 +12,3 @@ from loader import bot
 @bot.message_handler(commands=['history'])
 def history(message: Message):
     pass
-    # TODO

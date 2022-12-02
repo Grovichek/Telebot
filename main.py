@@ -2,10 +2,10 @@ from loader import bot
 import handlers
 from telebot.custom_filters import StateFilter
 from utils.set_bot_commands import set_default_commands
-from database.create_db import create_db
+from database import crud
 
 if __name__ == '__main__':
-    create_db()
-    bot.add_custom_filter(StateFilter(bot))
+    crud.create_db()
     set_default_commands(bot)
-    bot.infinity_polling()
+    bot.add_custom_filter(StateFilter(bot))
+    bot.infinity_polling(skip_pending=True)

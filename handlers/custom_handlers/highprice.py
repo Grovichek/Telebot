@@ -14,4 +14,3 @@ from loader import bot
 @bot.message_handler(commands=['highprice'])
 def highprice(message: Message):
     pass
-    # TODO
