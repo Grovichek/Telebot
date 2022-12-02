@@ -16,4 +16,3 @@ from loader import bot
 @bot.message_handler(commands=['bestdeal'])
 def bestdeal(message: Message):
     pass
-    # TODO
