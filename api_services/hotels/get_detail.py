@@ -1,24 +1,30 @@
 import json
 import random
-from telebot.types import InputMediaPhoto
-
 import requests
 
 from config_data.config import HOTELS_API_URL, RAPID_API_KEY
 from exceptions import ApiException
 
 
-def get_hotel_images(hotel_id: str, count: int) -> list[InputMediaPhoto]:
-    detail = _detail_request(property_id=hotel_id)
-    images = _parse_hotel_images(detail=detail, count=count)
-    return images
+def get_hotel_images(hotel_id: str, num_of_images: int)->list:
+    """
+    :param hotel_id: id отеля
+    :param num_of_images: необходимое количество фотографий
+    :return: список url-ов
+    """
+    try:
+        detail = _detail_request(property_id=hotel_id)
+    except ApiException:
+        detail = None
+    photos = _parse_hotel_images(detail=detail, num_of_images=num_of_images)
+    return photos
 
 
 def _detail_request(property_id: str) -> dict:
     """
     Запрос к API
-    :param property_id: id отеля полученный из функции get_a_list_of_hotels_by_region_id()
-    :return: Список кортежей содержащих ссылку на фото и описание фото
+    :param property_id: id отеля
+    :return: ответ сервера
     """
     url = f"{HOTELS_API_URL}/properties/v2/detail"
 
@@ -27,8 +33,9 @@ def _detail_request(property_id: str) -> dict:
         "eapid": 1,
         "locale": "ru_RU",
         "siteId": 300000001,
-        "propertyId": property_id
+        "propertyId": f"{property_id}"
     }
+
     headers = {
         "content-type": "application/json",
         "X-RapidAPI-Key": RAPID_API_KEY,
@@ -36,7 +43,7 @@ def _detail_request(property_id: str) -> dict:
     }
 
     try:
-        response = requests.request("POST", url, json=payload, headers=headers, timeout=10)
+        response = requests.request("POST", url, json=payload, headers=headers, timeout=20)
     except:
         raise ApiException('Время истекло')
 
@@ -49,12 +56,18 @@ def _detail_request(property_id: str) -> dict:
         raise ApiException(f'Неправильный запрос. код: {response.status_code}')
 
 
-def _parse_hotel_images(detail: dict, count: int) -> list:
+def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
+    """
+    :param detail: словарь с сервера
+    :param num_of_images: необходимое количество фотографий
+    :return: список из num_of_images СЛУЧАЙНЫХ url-ов или все имеющиеся url
+    """
     result = list()
     for image in detail['data']['propertyInfo']['propertyGallery']['images']:
-        result.append(InputMediaPhoto(media=image['image']['url'], caption=image['image']['description']))
+        result.append(image['image']['url'])
+    if num_of_images <= len(result):
+        return random.sample(result, num_of_images)
+    else:
+        return random.sample(result, len(result))
 
-    return random.sample(result, count)
-
-
-# print(get_hotel_images('2528760', 5))
+# print(get_hotel_images('795873', 7))

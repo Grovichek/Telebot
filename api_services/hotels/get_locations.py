@@ -11,12 +11,15 @@ class City(NamedTuple):
     city_name: str
 
 
-def get_cities_by_query(query: str) -> list:
+def get_cities_by_query(query: str) -> list[City]:
     """
     :param query: строка для поиска
     :return: список экземпляров City
     """
-    locations = _locations_request(query)
+    try:
+        locations = _locations_request(query)
+    except ApiException:
+        return []
     cities = _parse_cities(locations)
     return cities
 
@@ -37,7 +40,6 @@ def _locations_request(query: get_cities_by_query) -> dict:
 
     try:
         response = requests.request("GET", url, headers=headers, params=querystring, timeout=10)
-
     except:
         raise ApiException('Время истекло')
 
@@ -53,10 +55,9 @@ def _locations_request(query: get_cities_by_query) -> dict:
         raise ApiException(f'Неправильный запрос. код: {response.status_code}')
 
 
-def _parse_cities(locations: _locations_request) -> list[City]:
+def _parse_cities(locations: dict) -> list[City]:
     """Принимает словарь от get_locations_by_query(), возвращает список именованных кортежей типа
     [City(city_id='3023', city_name='Рим, Лацио, Италия')]"""
-
     result = list()
     for city in locations["sr"]:
         if city["type"] == "CITY":
