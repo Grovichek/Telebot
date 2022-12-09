@@ -2,22 +2,28 @@ import json
 import random
 import requests
 
+from api_services.hotels.get_properties import HotelInfo
 from config_data.config import HOTELS_API_URL, RAPID_API_KEY
 from exceptions import ApiException
 
 
-def get_hotel_images(hotel_id: str, num_of_images: int)->list:
+def get_hotel_detail(hotel: HotelInfo, num_of_images: int) -> HotelInfo:
     """
     :param hotel_id: id отеля
     :param num_of_images: необходимое количество фотографий
     :return: список url-ов
     """
     try:
-        detail = _detail_request(property_id=hotel_id)
+        detail = _detail_request(property_id=hotel.hotel_id)
     except ApiException:
         detail = None
-    photos = _parse_hotel_images(detail=detail, num_of_images=num_of_images)
-    return photos
+    hotel = hotel._replace(
+        images=_parse_hotel_images(detail=detail, num_of_images=num_of_images),
+        address=_parse_hotel_address(detail=detail),
+        star_rating=_parse_star_rating(detail=detail)
+    )
+
+    return hotel
 
 
 def _detail_request(property_id: str) -> dict:
@@ -69,5 +75,21 @@ def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
         return random.sample(result, num_of_images)
     else:
         return random.sample(result, len(result))
+
+
+def _parse_hotel_address(detail: dict):
+    try:
+        address = detail['data']['propertyInfo']['summary']['location']['address']['addressLine']
+    except:
+        address = None
+    return address
+
+
+def _parse_star_rating(detail: dict):
+    try:
+        star_rating = detail['data']['propertyInfo']['summary']['overview']['propertyRating']['rating']
+    except:
+        star_rating = None
+    return star_rating
 
 # print(get_hotel_images('795873', 7))

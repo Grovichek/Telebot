@@ -2,8 +2,9 @@ from telebot.types import Message, CallbackQuery, InputMediaPhoto
 from telegram_bot_calendar import WYearTelegramCalendar
 from datetime import date
 
-from api_services.hotels.get_detail import get_hotel_images
+from api_services.hotels.get_detail import get_hotel_detail
 from api_services.hotels.get_properties import search_hotels_by_filters
+from keyboards.inline.hotels_kb import keyboard_for_hotels
 from loader import bot
 from states.my_states import MainStates
 from keyboards.inline.cities_kb import keyboard_for_cities
@@ -49,7 +50,10 @@ def get_city(msg: Message):
     with bot.retrieve_data(msg.from_user.id) as data:
         bot.delete_message(msg.chat.id, data['main_msg'].message_id)
         data['main_msg'] = bot.send_message(msg.chat.id, 'Нужно подумать')
-    cities = get_cities_by_query(msg.text)
+    try:
+        cities = get_cities_by_query(msg.text)
+    except:
+        cities = 0
     if cities:
         bot.edit_message_text('Выберите из списка подходящий вариант',
                               msg.chat.id,
@@ -139,6 +143,7 @@ def no(call: CallbackQuery):
     """Устанавливает флаг data['is_show_photos'] = False, вызывает функцию show_results()"""
     with bot.retrieve_data(call.message.chat.id) as data:
         data['is_show_photos'] = False
+        data['num_of_photos'] = 0
     bot.set_state(call.message.from_user.id, MainStates.show_result)
     show_results(call.message)
 
@@ -154,7 +159,7 @@ def get_num_of_photos(call: CallbackQuery):
 
 def show_results(msg: Message):
     """Функция для вывода конечного результата"""
-    bot.edit_message_text("Ждите! Пока не освою рекурсию, буду загружать медленно",
+    bot.edit_message_text("Ждите! Пока не освою async/await, буду загружать о-о-очень медленно",
                           msg.chat.id,
                           msg.message_id)
     with bot.retrieve_data(msg.chat.id) as data:
@@ -163,13 +168,8 @@ def show_results(msg: Message):
                                           check_in_date=data['check_in'],
                                           check_out_date=data['check_out'],
                                           sort=data['sort'])
+        result = []
         for hotel in hotels:
-            print(hotel)
-            bot.send_message(msg.chat.id, f"Название отеля - {hotel.hotel_name}\n"
-                                          f"Расстояние до центра - {hotel.distance_from_center} км\n"
-                                          f"Цена за ночь - {hotel.price}\n"
-                                          f"Рейтинг отеля - {hotel.reviews}/10")
-            if data['is_show_photos']:
-                images = get_hotel_images(hotel_id=hotel.hotel_id, num_of_images=data['num_of_photos'])
-
-                bot.send_media_group(msg.chat.id, [InputMediaPhoto(media=i) for i in images])
+            result.append(get_hotel_detail(hotel=hotel, num_of_images=data['num_of_photos']))
+        print(result)
+        bot.edit_message_text('result', msg.chat.id, msg.message_id, reply_markup=keyboard_for_hotels(result, 'hotel'))

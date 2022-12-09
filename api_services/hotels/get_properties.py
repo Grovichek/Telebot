@@ -13,9 +13,9 @@ class HotelInfo(NamedTuple):
     distance_from_center: str
     price: str
     reviews: str
-    # address: str
-
-
+    address: str
+    images:list
+    star_rating:str
 def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str,
                              check_in_date: date, check_out_date: date) -> list[HotelInfo]:
     """
@@ -34,7 +34,10 @@ def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str,
             hotel_name=_parse_hotel_name(item),
             distance_from_center=_parse_destination(item),
             price=_parse_price(item),
-            reviews=_parse_reviews(item)
+            reviews=_parse_reviews(item),
+            address='Не известно',
+            images=[],
+            star_rating='Не известно'
         ))
     return hotels
 
