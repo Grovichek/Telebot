@@ -67,5 +67,4 @@ def _parse_cities(locations: dict) -> list[City]:
     else:
         raise ApiException('В списке не найдено городов')
 
-
 # print(get_cities_by_query('london'))

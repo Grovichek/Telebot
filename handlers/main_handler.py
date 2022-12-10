@@ -2,7 +2,7 @@ from telebot.types import Message, CallbackQuery, InputMediaPhoto
 from telegram_bot_calendar import WYearTelegramCalendar
 from datetime import date
 
-from api_services.hotels.get_detail import get_hotel_detail
+from api_services.hotels.get_detail import get_hotels_detail
 from api_services.hotels.get_properties import search_hotels_by_filters
 from keyboards.inline.hotels_kb import keyboard_for_hotels
 from loader import bot
@@ -158,7 +158,8 @@ def get_num_of_photos(call: CallbackQuery):
 
 
 def show_results(msg: Message):
-    """Функция для вывода конечного результата"""
+    """Функция для обработки результатов, пока что не оптимизированная"""
+
     bot.edit_message_text("Ждите! Пока не освою async/await, буду загружать о-о-очень медленно",
                           msg.chat.id,
                           msg.message_id)
@@ -168,8 +169,6 @@ def show_results(msg: Message):
                                           check_in_date=data['check_in'],
                                           check_out_date=data['check_out'],
                                           sort=data['sort'])
-        result = []
-        for hotel in hotels:
-            result.append(get_hotel_detail(hotel=hotel, num_of_images=data['num_of_photos']))
-        print(result)
+        result = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
+
         bot.edit_message_text('result', msg.chat.id, msg.message_id, reply_markup=keyboard_for_hotels(result, 'hotel'))

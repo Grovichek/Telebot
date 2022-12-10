@@ -14,8 +14,10 @@ class HotelInfo(NamedTuple):
     price: str
     reviews: str
     address: str
-    images:list
-    star_rating:str
+    images: list
+    star_rating: str
+
+
 def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str,
                              check_in_date: date, check_out_date: date) -> list[HotelInfo]:
     """
@@ -161,7 +163,6 @@ def _parse_reviews(properties: dict):
 
 # print(search_hotels_by_filters(region_id='3023', num_of_results=3, sort='PRICE_LOW_TO_HIGH',
 #                                check_in_date=date.today(), check_out_date=date.today() + timedelta(days=7)))
-
 
 
 # hotel=search_hotels_by_filters(region_id='3023', num_of_results=3, sort='PRICE_LOW_TO_HIGH',
