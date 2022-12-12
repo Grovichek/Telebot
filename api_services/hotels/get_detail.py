@@ -25,6 +25,7 @@ async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list
                                                        num_of_images=num_of_images)))
 
     results = await asyncio.gather(*tasks)
+    # TODO Не понятно почему светится ретёрн, типы совпадают
     return results
 
 
