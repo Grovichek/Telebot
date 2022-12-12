@@ -7,8 +7,6 @@ from api_services.hotels.get_properties import HotelInfo
 from config_data.config import HOTELS_API_URL, RAPID_API_KEY
 from exceptions import ApiException
 
-import json
-
 
 async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list[HotelInfo]:
     """
@@ -31,9 +29,9 @@ async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list
 
 async def _update_hotel(hotel: HotelInfo, detail: dict, num_of_images: int):
     hotel = hotel._replace(
-        images=_parse_hotel_images(detail=detail, num_of_images=num_of_images),
-        address=_parse_hotel_address(detail=detail),
-        star_rating=_parse_star_rating(detail=detail)
+        images=await _parse_hotel_images(detail=detail, num_of_images=num_of_images),
+        address=await _parse_hotel_address(detail=detail),
+        star_rating=await _parse_star_rating(detail=detail)
     )
     return hotel
 
@@ -108,7 +106,7 @@ async def _detail_request(hotel_id: str):
 #         raise ApiException(f'Неправильный запрос. код: {response.status_code}')
 
 
-def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
+async def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
     """
     :param detail: словарь с сервера
     :param num_of_images: необходимое количество фотографий
@@ -123,7 +121,7 @@ def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
         return random.sample(result, len(result))
 
 
-def _parse_hotel_address(detail: dict) -> str:
+async def _parse_hotel_address(detail: dict) -> str:
     """
     получение адреса отеля
     :param detail: словарь с сервера
@@ -136,7 +134,7 @@ def _parse_hotel_address(detail: dict) -> str:
     return address
 
 
-def _parse_star_rating(detail: dict) -> str:
+async def _parse_star_rating(detail: dict) -> str:
     """
     Получение количества звёзд отеля
     :param detail: словарь с сервера

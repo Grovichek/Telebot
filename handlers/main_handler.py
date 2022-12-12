@@ -213,6 +213,7 @@ def show_selected_hotel(call: CallbackQuery):
         for hotel in data['results']:
             if hotel.hotel_id == call.data.lstrip('hotel'):
                 bot.delete_message(call.message.chat.id, call.message.message_id)
+                # TODO Тут медиа группа отправляется
                 data['images'] = bot.send_media_group(call.message.chat.id, [InputMediaPhoto(i) for i in hotel.images])
 
                 bot.send_message(call.message.chat.id,
@@ -229,6 +230,7 @@ def show_selected_hotel(call: CallbackQuery):
 def go_back(call: CallbackQuery):
     """Возврат к результатам"""
     with bot.retrieve_data(call.message.chat.id) as data:
+        # TODO Тут медиа группа удаляется
         [bot.delete_message(call.message.chat.id, i.message_id) for i in data['images']]
 
         bot.edit_message_text('Вот что удалось найти',
