@@ -1,9 +1,11 @@
 from telebot.types import Message, CallbackQuery, InputMediaPhoto
 from telegram_bot_calendar import WYearTelegramCalendar
-from datetime import date
+from datetime import date, timedelta
+import asyncio
 
 from api_services.hotels.get_detail import get_hotels_detail
 from api_services.hotels.get_properties import search_hotels_by_filters
+from keyboards.inline.go_back_kb import go_back_kb
 from keyboards.inline.hotels_kb import keyboard_for_hotels
 from loader import bot
 from states.my_states import MainStates
@@ -11,12 +13,6 @@ from keyboards.inline.cities_kb import keyboard_for_cities
 from keyboards.inline.num_kd import num_keyboard
 from keyboards.inline.yes_no_kd import yes_no_keyboard
 from api_services.hotels.get_locations import get_cities_by_query
-
-import asyncio
-
-MAX_NUM_OF_RESULTS = 15
-MAX_NUM_OF_PHOTOS = 10
-
 
 # ТЗ
 # Команда /lowprice
@@ -26,6 +22,37 @@ MAX_NUM_OF_PHOTOS = 10
 # 3. Необходимость загрузки и вывода фотографий для каждого отеля (“Да/Нет”)
 #   a. При положительном ответе пользователь также вводит количество необходимых фотографий (не больше заранее
 #   определённого максимума)
+
+# Команда /highprice
+# После ввода команды у пользователя запрашивается:
+# 1. Город, где будет проводиться поиск.
+# 2. Количество отелей, которые необходимо вывести в результате (не больше заранее определённого максимума).
+# 3. Необходимость загрузки и вывода фотографий для каждого отеля (“Да/Нет”)
+#   a. При положительном ответе пользователь также вводит количество необходимых фотографий (не больше заранее
+#   определённого максимума)
+
+# Команда /bestdeal
+# После ввода команды у пользователя запрашивается:
+# 1. Город, где будет проводиться поиск.
+# 2. Диапазон цен.
+# 3. Диапазон расстояния, на котором находится отель от центра.
+# 4. Количество отелей, которые необходимо вывести в результате (не больше заранее определённого максимума).
+# 5. Необходимость загрузки и вывода фотографий для каждого отеля (“Да/Нет”)
+#   a. При положительном ответе пользователь также вводит количество необходимых фотографий (не больше заранее
+#   определённого максимума)
+
+# Команда /history
+# После ввода команды пользователю выводится история поиска отелей. Сама история содержит:
+# 1. Команду, которую вводил пользователь.
+# 2. Дату и время ввода команды.
+# 3. Отели, которые были найдены.
+
+
+MAX_NUM_OF_RESULTS = 15
+MAX_NUM_OF_PHOTOS = 10
+
+# TODO Если на любом этапе сценария ввести что-то, сценарий начинается с начала (с поиска городов)
+#  не смотря на состояния пользователя
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('start_'))
@@ -92,13 +119,16 @@ def cal(c: CallbackQuery):
         bot.edit_message_text("Выберите дату предполагаемого выселения из отеля:",
                               c.message.chat.id,
                               c.message.message_id, reply_markup=calendar)
+        bot.set_state(c.message.from_user.id, MainStates.get_check_out)
 
 
 @bot.callback_query_handler(func=WYearTelegramCalendar.func(calendar_id=2))
 def cal(c: CallbackQuery):
     """Сохранение даты выселение, вывод клавиатуры для запроса количества необходимых результатов"""
     with bot.retrieve_data(c.message.chat.id) as data:
-        result, key, step = WYearTelegramCalendar(calendar_id=2, locale='ru', min_date=data['check_in']).process(c.data)
+        result, key, step = WYearTelegramCalendar(calendar_id=2,
+                                                  locale='ru',
+                                                  min_date=data['check_in'] + timedelta(days=1)).process(c.data)
     if not result and key:
         bot.edit_message_text("Выберите дату предполагаемого выселения из отеля:",
                               c.message.chat.id,
@@ -107,11 +137,11 @@ def cal(c: CallbackQuery):
     elif result:
         with bot.retrieve_data(c.message.chat.id) as data:
             data['check_out'] = result
-        bot.set_state(c.message.from_user.id, MainStates.get_num_of_results)
         bot.edit_message_text("Сколько результатов отобразить?",
                               c.message.chat.id,
                               c.message.message_id,
                               reply_markup=num_keyboard(MAX_NUM_OF_RESULTS, 'num_of_results'))
+        bot.set_state(c.message.from_user.id, MainStates.get_num_of_results)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('num_of_results'))
@@ -119,11 +149,11 @@ def get_num_of_results(call: CallbackQuery):
     """Сохранение количества необходимых результатов, вывод клавиатуры с запросом о необходимости загрузки фото"""
     with bot.retrieve_data(call.message.chat.id) as data:
         data['num_of_results'] = int(call.data.lstrip('num_of_results'))
-    bot.set_state(call.message.from_user.id, MainStates.get_is_show_photo)
     bot.edit_message_text("Загрузить фото из отелей??",
                           call.message.chat.id,
                           call.message.message_id,
                           reply_markup=yes_no_keyboard('is_show_photo'))
+    bot.set_state(call.message.from_user.id, MainStates.get_is_show_photo)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('is_show_photo_yes'))
@@ -158,9 +188,8 @@ def get_num_of_photos(call: CallbackQuery):
 
 
 def show_results(msg: Message):
-    """Функция для обработки результатов, пока что не оптимизированная"""
-
-    bot.edit_message_text("Ждите! Пока не освою async/await, буду загружать о-о-очень медленно",
+    """Функция для обработки результатов, вывод клавиатуры с найденными отелями"""
+    bot.edit_message_text("Нужно немного подождать⏳",
                           msg.chat.id,
                           msg.message_id)
     with bot.retrieve_data(msg.chat.id) as data:
@@ -169,6 +198,40 @@ def show_results(msg: Message):
                                           check_in_date=data['check_in'],
                                           check_out_date=data['check_out'],
                                           sort=data['sort'])
-        result = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
+        results = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
+        data['results'] = results
+    bot.edit_message_text('Вот что удалось найти',
+                          msg.chat.id,
+                          msg.message_id,
+                          reply_markup=keyboard_for_hotels(results, 'hotel'))
 
-        bot.edit_message_text('result', msg.chat.id, msg.message_id, reply_markup=keyboard_for_hotels(result, 'hotel'))
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('hotel'))
+def show_selected_hotel(call: CallbackQuery):
+    """Вывод фотографий и карточки выбранного отеля"""
+    with bot.retrieve_data(call.message.chat.id) as data:
+        for hotel in data['results']:
+            if hotel.hotel_id == call.data.lstrip('hotel'):
+                bot.delete_message(call.message.chat.id, call.message.message_id)
+                data['images'] = bot.send_media_group(call.message.chat.id, [InputMediaPhoto(i) for i in hotel.images])
+
+                bot.send_message(call.message.chat.id,
+                                 f"Название отеля - {hotel.hotel_name}\n"
+                                 f"Расстояние до центра - {hotel.distance_from_center}\n"
+                                 f"Цена за ночь от {hotel.price}\n"
+                                 f"Рейтинг - {hotel.reviews}\n"
+                                 f"Адресс - {hotel.address}\n"
+                                 f"⭐{hotel.star_rating}",
+                                 reply_markup=go_back_kb())
+
+
+@bot.callback_query_handler(func=lambda call: call.data == 'go_back')
+def go_back(call: CallbackQuery):
+    """Возврат к результатам"""
+    with bot.retrieve_data(call.message.chat.id) as data:
+        [bot.delete_message(call.message.chat.id, i.message_id) for i in data['images']]
+
+        bot.edit_message_text('Вот что удалось найти',
+                              call.message.chat.id,
+                              call.message.message_id,
+                              reply_markup=keyboard_for_hotels(data['results'], 'hotel'))

@@ -9,4 +9,4 @@ class MainStates(StatesGroup):
     get_num_of_results = State()
     get_is_show_photo = State()
     get_num_of_photos = State()
-    show_result=State()
+    show_result = State()

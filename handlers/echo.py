@@ -2,9 +2,8 @@ from telebot.types import Message
 
 from loader import bot
 
-
-# Эхо хендлер, куда летят текстовые сообщения без указанного состояния
-# @bot.message_handler(state=None)
+#  TODO при включении эхо, бот перестаёт реагировать на команды (/start,/help)
+# @bot.message_handler(content_types=['text'])
 # def bot_echo(message: Message):
 #     bot.reply_to(message, "Эхо без состояния или фильтра.\nСообщение:"
 #                           f"{message.text}")

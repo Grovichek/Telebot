@@ -1,33 +1,46 @@
 import random
 import asyncio
 from aiohttp import ClientSession
+import aiofiles
 
 from api_services.hotels.get_properties import HotelInfo
 from config_data.config import HOTELS_API_URL, RAPID_API_KEY
 from exceptions import ApiException
 
+import json
 
-async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list[HotelInfo]:  # TODO Не понимаю почему ругается
+
+async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list[HotelInfo]:
     """
     :param hotels: список экземпляров HotelInfo
     :param num_of_images: необходимое количество фотографий
-    :return: список url-ов
+    :return: список обновлённых экземпляров HotelInfo
     """
     tasks = []
     for hotel in hotels:
-        await asyncio.sleep(.25)  # Пришлось притормозить из-за ограничений апи
+        await asyncio.sleep(.25)  # API принимает не больше 5 запросов в сек
 
-        tasks.append(asyncio.create_task(_detail_request(hotel, num_of_images)))
+        tasks.append(asyncio.create_task(_update_hotel(hotel=hotel,
+                                                       detail=await _detail_request(hotel_id=hotel.hotel_id),
+                                                       num_of_images=num_of_images)))
 
     results = await asyncio.gather(*tasks)
     return results
 
 
-async def _detail_request(hotel: HotelInfo, num_of_images: int): # TODO Не удаётся отрефакторить из-за слабого владения asyncio
+async def _update_hotel(hotel: HotelInfo, detail: dict, num_of_images: int):
+    hotel = hotel._replace(
+        images=_parse_hotel_images(detail=detail, num_of_images=num_of_images),
+        address=_parse_hotel_address(detail=detail),
+        star_rating=_parse_star_rating(detail=detail)
+    )
+    return hotel
+
+
+async def _detail_request(hotel_id: str):
     """
-    запрос на сервер и ещё один кусок кода который не удаётся пока что вынести в доп функцию
-    :param hotel: Экземпляр HotelInfo
-    :param num_of_images: Необходимое количество изображений
+    запрос на сервер
+    :param hotel_id: Экземпляр HotelInfo
     :return: обновлённый Экземпляр HotelInfo
     """
     async with ClientSession() as session:
@@ -38,7 +51,7 @@ async def _detail_request(hotel: HotelInfo, num_of_images: int): # TODO Не у�
             "eapid": 1,
             "locale": "en_US",
             "siteId": 300000001,
-            "propertyId": f"{hotel.hotel_id}"
+            "propertyId": f"{hotel_id}"
         }
         headers = {
             "content-type": "application/json",
@@ -51,15 +64,9 @@ async def _detail_request(hotel: HotelInfo, num_of_images: int): # TODO Не у�
                                        json=payload,
                                        headers=headers,
                                        params=payload,
-                                       timeout=10) as response:
-                detail = await response.json()
-                hotel = hotel._replace(
-                    images=await _parse_hotel_images(detail=detail, num_of_images=num_of_images),
-                    address=await _parse_hotel_address(detail=detail),
-                    star_rating=await _parse_star_rating(detail=detail)
-                )
+                                       timeout=15) as response:
 
-                return hotel
+                return await response.json()
         except:
             raise ApiException('Не удалось связаться с сервером')
 
@@ -100,7 +107,7 @@ async def _detail_request(hotel: HotelInfo, num_of_images: int): # TODO Не у�
 #         raise ApiException(f'Неправильный запрос. код: {response.status_code}')
 
 
-async def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
+def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
     """
     :param detail: словарь с сервера
     :param num_of_images: необходимое количество фотографий
@@ -115,7 +122,7 @@ async def _parse_hotel_images(detail: dict, num_of_images: int) -> list:
         return random.sample(result, len(result))
 
 
-async def _parse_hotel_address(detail: dict) -> str:
+def _parse_hotel_address(detail: dict) -> str:
     """
     получение адреса отеля
     :param detail: словарь с сервера
@@ -124,11 +131,11 @@ async def _parse_hotel_address(detail: dict) -> str:
     try:
         address = detail['data']['propertyInfo']['summary']['location']['address']['addressLine']
     except:
-        address = None
+        address = 'Не известно'
     return address
 
 
-async def _parse_star_rating(detail: dict) -> str:
+def _parse_star_rating(detail: dict) -> str:
     """
     Получение количества звёзд отеля
     :param detail: словарь с сервера
@@ -137,5 +144,5 @@ async def _parse_star_rating(detail: dict) -> str:
     try:
         star_rating = detail['data']['propertyInfo']['summary']['overview']['propertyRating']['rating']
     except:
-        star_rating = None
+        star_rating = 'Не известно'
     return star_rating
