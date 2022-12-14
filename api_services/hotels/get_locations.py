@@ -24,7 +24,7 @@ def get_cities_by_query(query: str) -> list[City]:
     return cities
 
 
-def _locations_request(query: get_cities_by_query) -> dict:
+def _locations_request(query: str) -> dict:
     """
     :param query: название города или страны
     :return: ответ сервера
@@ -37,27 +37,35 @@ def _locations_request(query: get_cities_by_query) -> dict:
         "X-RapidAPI-Key": RAPID_API_KEY,
         "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
     }
-
     try:
-        response = requests.request("GET", url, headers=headers, params=querystring, timeout=10)
-    except:
-        raise ApiException('Время истекло')
+        response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
 
+        ###################################################################################
+        response_count = response.headers['X-RateLimit-Requests-Remaining']
+        print('Остаток запросов:', response_count)
+        ###################################################################################
+
+    except requests.ConnectTimeout:
+        raise ApiException(ApiException.timeout_error)
     if response.status_code == requests.codes.ok:
         response = json.loads(response.text)
         if response['rc'] == 'OK':
-            # with open('locations.json', 'w') as file:
+            # ###########################################################################################
+            # with open('api_services/hotels/locations.json', 'w') as file:
             #     file.write(json.dumps(response, indent=4, ensure_ascii=False))
+            # ###########################################################################################
             return response
         else:
-            raise ApiException('Ничего не найдено')
+            raise ApiException(ApiException.no_result)
     else:
-        raise ApiException(f'Неправильный запрос. код: {response.status_code}')
+        raise ApiException(f'{ApiException.bad_request} код: {response.status_code}')
 
 
 def _parse_cities(locations: dict) -> list[City]:
-    """Принимает словарь от get_locations_by_query(), возвращает список именованных кортежей типа
-    [City(city_id='3023', city_name='Рим, Лацио, Италия')]"""
+    """
+    :param locations: json с сервера
+    :return: Список именованных кортежей City
+    """
     result = list()
     for city in locations["sr"]:
         if city["type"] == "CITY":
@@ -65,6 +73,6 @@ def _parse_cities(locations: dict) -> list[City]:
     if result:
         return result
     else:
-        raise ApiException('В списке не найдено городов')
+        raise ApiException(ApiException.no_result)
 
 # print(get_cities_by_query('london'))
