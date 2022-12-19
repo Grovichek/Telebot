@@ -1,5 +1,6 @@
 from typing import NamedTuple
 import json
+
 import requests
 
 from config_data.config import HOTELS_API_URL, RAPID_API_KEY
@@ -16,10 +17,7 @@ def get_cities_by_query(query: str) -> list[City]:
     :param query: строка для поиска
     :return: список экземпляров City
     """
-    try:
-        locations = _locations_request(query)
-    except ApiException:
-        return []
+    locations = _locations_request(query)
     cities = _parse_cities(locations)
     return cities
 
@@ -39,7 +37,7 @@ def _locations_request(query: str) -> dict:
     }
     try:
         response = requests.request("GET", url, headers=headers, params=querystring, timeout=20)
-
+        # TODO Удалить перед сдачей
         ###################################################################################
         response_count = response.headers['X-RateLimit-Requests-Remaining']
         print('Остаток запросов:', response_count)
@@ -50,6 +48,7 @@ def _locations_request(query: str) -> dict:
     if response.status_code == requests.codes.ok:
         response = json.loads(response.text)
         if response['rc'] == 'OK':
+            # TODO Удалить перед сдачей
             # ###########################################################################################
             # with open('api_services/hotels/locations.json', 'w') as file:
             #     file.write(json.dumps(response, indent=4, ensure_ascii=False))
@@ -75,4 +74,6 @@ def _parse_cities(locations: dict) -> list[City]:
     else:
         raise ApiException(ApiException.no_result)
 
-# print(get_cities_by_query('london'))
+
+if __name__ == '__main__':
+    print(get_cities_by_query('london'))

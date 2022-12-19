@@ -65,16 +65,17 @@ MAX_NUM_OF_PHOTOS = 10
 @bot.callback_query_handler(func=lambda call: call.data.startswith('start_'))
 def start(call: CallbackQuery) -> None:
     """Запуск сценария и выбор типа сортировки, запрос города"""
+    sort = call.data.lstrip('start_')
     with bot.retrieve_data(call.from_user.id) as data:
-        if call.data.lstrip('start_') == 'low_price':
+        if sort == 'low_price':
             data['sort'] = 'PRICE_LOW_TO_HIGH'
             word = 'дешёвые'
-        elif call.data.lstrip('start_') == 'high_price':
+        elif sort == 'high_price':
             data['sort'] = 'PRICE_HIGH_TO_LOW'
             word = 'дорогие'
-        elif call.data.lstrip('start_') == 'best_deal':
+        elif sort == 'best_deal':
             data['sort'] = 'BEST_DEAL'
-            word = 'Лучшие'
+            word = 'лучшие'
         data['main_msg'] = bot.edit_message_text(f'Хорошо, в каком городе мне поискать {word} отели?',
                                                  call.message.chat.id, call.message.message_id)
     bot.set_state(call.from_user.id, MainStates.get_city)
@@ -88,18 +89,16 @@ def get_city(msg: Message) -> None:
         data['main_msg'] = bot.send_message(msg.chat.id, 'Нужно подумать')
     try:
         cities = get_cities_by_query(query=msg.text)
-    except ApiException:
-        cities = 0
-    if cities:
         bot.edit_message_text('Выберите из списка подходящий вариант', msg.chat.id, data['main_msg'].message_id,
                               reply_markup=keyboard_for_cities(cities=cities, prefix='get-city'))
-    else:
+    except ApiException:
         bot.edit_message_text('Ничего не найдено, уточните ваш запрос',
                               msg.chat.id, data['main_msg'].message_id)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('get-city'))
 def get_price(call: CallbackQuery) -> None:
+    """Сохраняет id города, выводит клавиатуру с запросом диапазона цен"""
     with bot.retrieve_data(call.from_user.id) as data:
         data['region_id'] = call.data.lstrip('get-city')
     bot.edit_message_text('Выберите подходящий диапазон цен',
@@ -109,9 +108,10 @@ def get_price(call: CallbackQuery) -> None:
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('price'))
 def get_dates_or_distance(call: CallbackQuery) -> None:
+    """Сохраняет диапазон цен, выводит клавиатуру с запросом максимальной дистанции от центра или
+    клавиатуру с запросом дат в зависимости от выбранной ранее сортировки"""
     with bot.retrieve_data(call.from_user.id) as data:
         data['min_price'], data['max_price'] = map(int, call.data.lstrip('price').split())
-
     if data['sort'] == 'BEST_DEAL':
         bot.edit_message_text('Как далеко от центра искать?',
                               call.message.chat.id, call.message.message_id, reply_markup=distance_kb('distance'))
@@ -126,6 +126,7 @@ def get_dates_or_distance(call: CallbackQuery) -> None:
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('distance'))
 def get_dates(call: CallbackQuery) -> None:
+    """Сохраняет максимальную дистанцию от центра, выводит клавиатуру с запросом даты заселения"""
     with bot.retrieve_data(call.from_user.id) as data:
         data['max_distance'] = float(call.data.lstrip('distance'))
     calendar, step = WYearTelegramCalendar(calendar_id=1, locale='ru', min_date=date.today()).build()
@@ -136,7 +137,7 @@ def get_dates(call: CallbackQuery) -> None:
 
 @bot.callback_query_handler(func=WYearTelegramCalendar.func(calendar_id=1))
 def cal(c: CallbackQuery) -> None:
-    """Сохранение даты заселения, вывод клавиатуры для выбора даты выселения"""
+    """Сохраняет даты заселения, выводит клавиатуру для выбора даты выселения"""
     result, key, step = WYearTelegramCalendar(calendar_id=1, locale='ru', min_date=date.today()).process(c.data)
     if not result and key:
         bot.edit_message_text("Выберите дату предполагаемого заселения в отель:",
@@ -213,24 +214,21 @@ def show_results(msg: Message) -> None:
     bot.edit_message_text("Нужно немного подождать⏳",
                           msg.chat.id, msg.message_id)
     with bot.retrieve_data(msg.chat.id) as data:
-        try:
-            hotels = search_hotels_by_filters(region_id=data['region_id'],
-                                              num_of_results=data['num_of_results'],
-                                              check_in_date=data['check_in'],
-                                              check_out_date=data['check_out'],
-                                              sort=data['sort'],
-                                              min_price=data['min_price'],
-                                              max_price=data['max_price'],
-                                              max_distance=data['max_distance'])
-            results = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
-
-        except ApiException:
-            bot.edit_message_text('Что-то пошло не так😕, попробуй начать с начала',
-                                  msg.chat.id, msg.message_id, reply_markup=main_menu_kb())
-            exit()
-        data['results'] = results
-    bot.edit_message_text('Вот что удалось найти:',
-                          msg.chat.id, msg.message_id, reply_markup=keyboard_for_hotels(results, 'hotel'))
+        hotels = search_hotels_by_filters(region_id=data['region_id'],
+                                          num_of_results=data['num_of_results'],
+                                          check_in_date=data['check_in'],
+                                          check_out_date=data['check_out'],
+                                          sort=data['sort'],
+                                          min_price=data['min_price'],
+                                          max_price=data['max_price'],
+                                          max_distance=data['max_distance'])
+    if hotels:
+        data['results'] = results = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
+        bot.edit_message_text('Вот что удалось найти:',
+                              msg.chat.id, msg.message_id, reply_markup=keyboard_for_hotels(results, 'hotel'))
+    else:
+        bot.edit_message_text('Ничего не найдено 😔',
+                              msg.chat.id, msg.message_id, reply_markup=main_menu_kb())
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('hotel'))

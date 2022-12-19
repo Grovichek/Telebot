@@ -18,30 +18,24 @@ class HotelInfo(NamedTuple):
     star_rating: str
 
 
-def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str,
-                             check_in_date: date, check_out_date: date,
-                             min_price: int, max_price: int, max_distance: float = None) -> list[HotelInfo]:
+def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str, check_in_date: date, check_out_date: date,
+                             min_price: int, max_price: int, max_distance: float) -> list[HotelInfo]:
     """
     Возвращает список именованных кортежей HotelInfo отсортированных одним из 3 способов
     Описание аргументов в _properties_request()
     """
+    hotels = _properties_request(region_id=region_id, check_in_date=check_in_date, check_out_date=check_out_date,
+                                 min_price=min_price, max_price=max_price)
     if sort == 'PRICE_LOW_TO_HIGH':
-        properties = _properties_request(region_id=region_id, num_of_results=num_of_results,
-                                         check_in_date=check_in_date, check_out_date=check_out_date,
-                                         min_price=min_price, max_price=max_price)
-
+        hotels = hotels[0:num_of_results + 1]
     elif sort == 'PRICE_HIGH_TO_LOW':
-        properties = _sort_high_to_low(region_id=region_id, num_of_results=num_of_results, check_in_date=check_in_date,
-                                       check_out_date=check_out_date, min_price=min_price, max_price=max_price)
+        hotels = _sort_high_to_low(hotels=hotels, num_of_results=num_of_results)
     elif sort == 'BEST_DEAL':
-        properties = _sort_best_deal(region_id=region_id, num_of_results=num_of_results, check_in_date=check_in_date,
-                                     check_out_date=check_out_date, min_price=min_price, max_price=max_price,
-                                     max_distance=max_distance)
-    else:
-        properties = {}
-    hotels = []
-    for item in properties:
-        hotels.append(HotelInfo(
+        hotels = _sort_best_deal(hotels=hotels, max_distance=max_distance, num_of_results=num_of_results)
+
+    results = []
+    for item in hotels:
+        results.append(HotelInfo(
             hotel_id=_parse_hotel_id(item),
             hotel_name=_parse_hotel_name(item),
             distance_from_center=_parse_destination(item),
@@ -51,41 +45,37 @@ def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str,
             images=[],
             star_rating='Не известно'
         ))
-    return hotels
+    return results
 
 
-def _sort_high_to_low(region_id, num_of_results, check_in_date, check_out_date, min_price, max_price)->list:
+def _sort_high_to_low(hotels, num_of_results) -> list:
     """Сортировка результатов по убыванию цены"""
-    properties = _properties_request(region_id=region_id, check_in_date=check_in_date, check_out_date=check_out_date,
-                                     min_price=min_price, max_price=max_price)
     results = []
-    for hotel in properties[:-num_of_results - 1:-1]:
+    for hotel in hotels[:-num_of_results - 1:-1]:
         results.append(hotel)
     return results
 
 
-def _sort_best_deal(region_id, num_of_results, check_in_date, check_out_date, min_price, max_price, max_distance)->list:
+def _sort_best_deal(hotels, num_of_results, max_distance) -> list:
     """Сортировка результатов по возрастанию цены и удалённости от центра"""
-    properties = _properties_request(region_id=region_id, check_in_date=check_in_date, check_out_date=check_out_date,
-                                     min_price=min_price, max_price=max_price)
     results = []
-    for hotel in properties:
-        if max_distance >= _parse_destination(hotel) and len(results) < num_of_results:
+    for hotel in hotels:
+        if max_distance >= _parse_destination(hotel):
             results.append(hotel)
+    results = sorted(results, key=lambda val: val['destinationInfo']['distanceFromDestination']['value'])
+    results = results[0:num_of_results]
     return results
 
 
-def _properties_request(region_id: str, check_in_date: date, check_out_date: date, num_of_results: int = 200,
-                        adults: int = 1, start_index: int = 0, min_price: int = 0, max_price: int = 0,
-                        sort: str = 'PRICE_LOW_TO_HIGH') -> dict:
+def _properties_request(region_id: str, check_in_date: date, check_out_date: date, min_price: int, max_price: int,
+                        num_of_results: int = 200) -> dict:
     """
     Ищет отели по множеству фильтров
     :param region_id: id региона полученный из get_locations_by_query()
-    :param adults: количество путешественников
     :param num_of_results: максимальное количество отелей, которое нужно найти
-    :param sort: ключ сортировки PRICE_RELEVANT (Цена + наш выбор), REVIEW (Оценка гостей),
-                                DISTANCE (Расстояние от центра города),
-                                PRICE_LOW_TO_HIGH (цена), PROPERTY_CLASS (количество звезд),RECOMMENDED (Рекомендовано)
+    :param sort: ключ сортировки PRICE_RELEVANT (Цена + наш выбор), REVIEW (Оценка гостей),PRICE_LOW_TO_HIGH (цена),
+                                 DISTANCE (Расстояние от центра города),PROPERTY_CLASS (количество звезд),
+                                 RECOMMENDED (Рекомендовано)
     :param check_in_date: Дата заселения
     :param check_out_date: Дата выселения
     :param min_price: минимальная цена за ночь
@@ -113,13 +103,13 @@ def _properties_request(region_id: str, check_in_date: date, check_out_date: dat
         },
         "rooms": [
             {
-                "adults": adults,
+                "adults": 1,
                 "children": []
             }
         ],
-        "resultsStartingIndex": start_index,
+        "resultsStartingIndex": 0,
         "resultsSize": num_of_results,
-        "sort": sort,
+        "sort": 'PRICE_LOW_TO_HIGH',
         "filters": {"price": {
             "max": max_price,
             "min": min_price
@@ -138,6 +128,7 @@ def _properties_request(region_id: str, check_in_date: date, check_out_date: dat
 
     if response.status_code == requests.codes.ok:
         response = json.loads(response.text)
+        # TODO Удалить перед сдачей
         # #########################################################################################
         # with open('api_services/hotels/hotels.json', 'w') as file:
         #     file.write(json.dumps(response, indent=4, ensure_ascii=False))
@@ -151,23 +142,23 @@ def _properties_request(region_id: str, check_in_date: date, check_out_date: dat
         raise ApiException(f'{ApiException.bad_request} код: {response.status_code}')
 
 
-def _parse_hotel_id(properties: dict):
-    hotel_id = properties['id']
+def _parse_hotel_id(hotels: dict):
+    hotel_id = hotels['id']
     return hotel_id
 
 
-def _parse_hotel_name(properties: dict):
-    hotel_name = properties['name']
+def _parse_hotel_name(hotels: dict):
+    hotel_name = hotels['name']
     return hotel_name
 
 
-def _parse_destination(properties: dict):
-    distance_from_center = properties['destinationInfo']['distanceFromDestination']['value']
+def _parse_destination(hotels: dict):
+    distance_from_center = hotels['destinationInfo']['distanceFromDestination']['value']
     return distance_from_center
 
 
-def _parse_price(properties: dict):
-    price = properties['price']['lead']['formatted']
+def _parse_price(hotels: dict):
+    price = hotels['price']['lead']['formatted']
     return price
 
 
@@ -175,5 +166,8 @@ def _parse_reviews(properties: dict):
     reviews = properties['reviews']['score']
     return reviews
 
-# _properties_request(region_id='6053839', num_of_results=10,
-#                     check_in_date=date.today(), check_out_date=date.today() + timedelta(days=7))
+# print(_properties_request(region_id='3000448054', num_of_results=10,
+#                           check_in_date=date.today(), check_out_date=date.today() + timedelta(days=7)))
+
+# print(_sort_best_deal(region_id='3000448054', num_of_results=10,
+#                           check_in_date=date.today(), check_out_date=date.today() + timedelta(days=7),min_price=1,max_price=500,max_distance=50))
