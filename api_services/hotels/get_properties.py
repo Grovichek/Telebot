@@ -1,5 +1,5 @@
 import json
-from datetime import date, timedelta
+from datetime import date
 from typing import NamedTuple
 import requests
 
@@ -14,8 +14,8 @@ class HotelInfo(NamedTuple):
     price: str
     reviews: str
     address: str
-    images: list
     star_rating: str
+    images: list
 
 
 def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str, check_in_date: date, check_out_date: date,
@@ -42,8 +42,8 @@ def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str, che
             price=_parse_price(item),
             reviews=_parse_reviews(item),
             address='Не известно',
-            images=[],
-            star_rating='Не известно'
+            star_rating='Не известно',
+            images=[]
         ))
     return results
 
@@ -128,11 +128,6 @@ def _properties_request(region_id: str, check_in_date: date, check_out_date: dat
 
     if response.status_code == requests.codes.ok:
         response = json.loads(response.text)
-        # TODO Удалить перед сдачей
-        # #########################################################################################
-        # with open('api_services/hotels/hotels.json', 'w') as file:
-        #     file.write(json.dumps(response, indent=4, ensure_ascii=False))
-        # #########################################################################################
         try:
             properties = response['data']['propertySearch']['properties']
             return properties
@@ -142,32 +137,26 @@ def _properties_request(region_id: str, check_in_date: date, check_out_date: dat
         raise ApiException(f'{ApiException.bad_request} код: {response.status_code}')
 
 
-def _parse_hotel_id(hotels: dict):
+def _parse_hotel_id(hotels: dict) -> str:
     hotel_id = hotels['id']
     return hotel_id
 
 
-def _parse_hotel_name(hotels: dict):
+def _parse_hotel_name(hotels: dict) -> str:
     hotel_name = hotels['name']
     return hotel_name
 
 
-def _parse_destination(hotels: dict):
+def _parse_destination(hotels: dict) -> str:
     distance_from_center = hotels['destinationInfo']['distanceFromDestination']['value']
     return distance_from_center
 
 
-def _parse_price(hotels: dict):
+def _parse_price(hotels: dict) -> str:
     price = hotels['price']['lead']['formatted']
     return price
 
 
-def _parse_reviews(properties: dict):
+def _parse_reviews(properties: dict) -> str:
     reviews = properties['reviews']['score']
     return reviews
-
-# print(_properties_request(region_id='3000448054', num_of_results=10,
-#                           check_in_date=date.today(), check_out_date=date.today() + timedelta(days=7)))
-
-# print(_sort_best_deal(region_id='3000448054', num_of_results=10,
-#                           check_in_date=date.today(), check_out_date=date.today() + timedelta(days=7),min_price=1,max_price=500,max_distance=50))

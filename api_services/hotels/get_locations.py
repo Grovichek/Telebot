@@ -1,6 +1,5 @@
 from typing import NamedTuple
 import json
-
 import requests
 
 from config_data.config import HOTELS_API_URL, RAPID_API_KEY
@@ -48,11 +47,6 @@ def _locations_request(query: str) -> dict:
     if response.status_code == requests.codes.ok:
         response = json.loads(response.text)
         if response['rc'] == 'OK':
-            # TODO Удалить перед сдачей
-            # ###########################################################################################
-            # with open('api_services/hotels/locations.json', 'w') as file:
-            #     file.write(json.dumps(response, indent=4, ensure_ascii=False))
-            # ###########################################################################################
             return response
         else:
             raise ApiException(ApiException.no_result)
@@ -73,7 +67,3 @@ def _parse_cities(locations: dict) -> list[City]:
         return result
     else:
         raise ApiException(ApiException.no_result)
-
-
-if __name__ == '__main__':
-    print(get_cities_by_query('london'))

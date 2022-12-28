@@ -1,4 +1,5 @@
 from . import echo
 from . import help
 from . import start
-from . import main_handler
+from . import main_handlers
+from . import history_handlers

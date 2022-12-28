@@ -1,6 +1,3 @@
-import json
-import aiofiles
-
 import random
 import asyncio
 from aiohttp import ClientSession
@@ -20,13 +17,13 @@ async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list
     tasks = []
     for hotel in hotels:
         await asyncio.sleep(0.25)  # API принимает не больше 5 запросов в сек
-        tasks.append(asyncio.create_task(_update_hotel(property_info=await _detail_request(hotel_id=hotel.hotel_id),
-                                                       num_of_images=num_of_images, hotel=hotel)))
+        tasks.append(
+            asyncio.create_task(_detail_request(hotel_id=hotel.hotel_id, num_of_images=num_of_images, hotel=hotel)))
     results = await asyncio.gather(*tasks)
     return results
 
 
-async def _detail_request(hotel_id: str) -> dict:
+async def _detail_request(hotel_id: str, num_of_images: int, hotel: HotelInfo) -> HotelInfo:
     """
     запрос на сервер
     :param hotel_id: Экземпляр HotelInfo
@@ -50,23 +47,20 @@ async def _detail_request(hotel_id: str) -> dict:
         try:
             async with session.request(method="POST", url=url, json=payload, headers=headers,
                                        params=payload, timeout=20) as response:
-                # ########################################################################################
-                # async with aiofiles.open('api_services/hotels/detail.json', 'w') as file:
-                #     text = await response.text()
-                #     await file.write(json.dumps(json.loads(text), indent=4, ensure_ascii=False))
-                # ########################################################################################
                 if response.ok:
                     response = await response.json()
                     try:
                         property_info = response['data']['propertyInfo']
-                        return property_info
+                        hotel_info = await _update_hotel(property_info=property_info, num_of_images=num_of_images,
+                                                         hotel=hotel)
+                        return hotel_info
                     except TypeError:
                         raise ApiException(ApiException.bad_request)
         except asyncio.TimeoutError:
             raise ApiException(ApiException.timeout_error)
 
 
-async def _update_hotel(property_info: dict, num_of_images: int, hotel: HotelInfo):
+async def _update_hotel(property_info: dict, num_of_images: int, hotel: HotelInfo) -> HotelInfo:
     """
     :param property_info: json с сервера
     :param num_of_images: необходимое количество фотографий
@@ -101,9 +95,7 @@ async def _parse_hotel_address(property_info: dict) -> str:
     :param property_info: словарь с сервера
     :return: адрес отеля
     """
-
     address = property_info['summary']['location']['address']['addressLine']
-
     return address
 
 
