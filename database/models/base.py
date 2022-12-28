@@ -3,6 +3,7 @@ from datetime import datetime
 from peewee import *
 
 from api_services.hotels.get_properties import HotelInfo
+from config_data.config import HISTORY_SIZE
 
 # TODO Раскидать модели по модулям
 db = SqliteDatabase(os.path.join("database", "data.db"))
@@ -30,14 +31,24 @@ class UserHistory(BaseModel):
     date = DateTimeField()
 
     @staticmethod
-    def create_history_item(user, command):
+    def create_history_element(user, command):
         return UserHistory.create(user=user,
                                   command=command,
                                   date=datetime.now().strftime("%m/%d/%Y, %H:%M"))
 
     @staticmethod
-    def get_history_items(user):
+    def get_list_of_history_elements(user):
         return [user_history for user_history in UserHistory.select().where(UserHistory.user_id == user)]
+
+    @staticmethod
+    def delete_history_element(user):
+        user_history = UserHistory.get_list_of_history_elements(user)
+        if len(user_history) > HISTORY_SIZE:
+            for content_item in HistoryContent.get_history_content(user_history[0]):
+                for image in Image.get_images_list_by_id(content_item):
+                    Image[image].delete_instance()
+                HistoryContent[content_item].delete_instance()
+            UserHistory[user_history[0]].delete_instance()
 
 
 class HistoryContent(BaseModel):
@@ -66,6 +77,11 @@ class HistoryContent(BaseModel):
 
     @staticmethod
     def get_history_content(history_item):
+        return [history_content_item for history_content_item in
+                HistoryContent.select().where(HistoryContent.user_history_id == history_item)]
+
+    @staticmethod
+    def get_list_of_history_content(history_item):
         results = []
         for history_content_item in HistoryContent.select().where(HistoryContent.user_history_id == history_item):
             results.append(HotelInfo(
@@ -85,6 +101,10 @@ class HistoryContent(BaseModel):
 class Image(BaseModel):
     history_content = ForeignKeyField(HistoryContent)
     image_url = TextField()
+
+    @staticmethod
+    def get_images_list_by_id(content_id):
+        return [image for image in Image.select().where(Image.history_content_id == content_id)]
 
 
 def create_tables():

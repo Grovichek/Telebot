@@ -7,7 +7,7 @@ from config_data.config import HOTELS_API_URL, RAPID_API_KEY
 from exceptions import ApiException
 
 
-async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list[HotelInfo]:  # TODO Разобраться
+async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list[HotelInfo]:
     """
     Класс HotelInfo создаётся в модуле get_properties.py, тут он дополняется
     :param hotels: список экземпляров HotelInfo
@@ -20,6 +20,7 @@ async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list
         tasks.append(
             asyncio.create_task(_detail_request(hotel_id=hotel.hotel_id, num_of_images=num_of_images, hotel=hotel)))
     results = await asyncio.gather(*tasks)
+    # TODO Не понимаю почему пайчарм ругается
     return results
 
 

@@ -10,7 +10,6 @@ def bot_start(msg: Message):
     bot.set_state(msg.from_user.id, MainStates.main_menu)
     bot.send_message(msg.chat.id, f"Привет, {msg.from_user.full_name}!\nЧем я могу тебе помочь?",
                      reply_markup=main_menu_kb())
-
     bot.delete_message(msg.chat.id, msg.message_id)
 
 

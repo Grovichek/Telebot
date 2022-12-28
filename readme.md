@@ -1,7 +1,7 @@
-**Запуск бота.**
-1. Ввести в терминал из корня проекта:
+# Запуск бота.
+* Ввести в терминал из корня проекта:
     * `pip install -r requirements.txt`
-2. Получить токены
+* Получить токены
     * Telegram - [тык](https://t.me/BotFather)
     * Rapid Api - [Тык](https://rapidapi.com/apidojo/api/hotels4/) 
       * Зарегаться 
@@ -9,5 +9,5 @@
       * Выбрать тариф
       * Скопировать ваш токен
       * ![img_2.png](img_2.png)
-3. Создать в корне проекта файл `.env` по образцу [.env.template](.env.template)
-4. Запустить [main.py](main.py)
+* Создать в корне проекта файл `.env` по образцу [.env.template](.env.template)
+* Запустить [main.py](main.py)

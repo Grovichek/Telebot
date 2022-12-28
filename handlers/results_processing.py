@@ -33,8 +33,9 @@ def results_processing(call: CallbackQuery) -> None:
             data['results'] = results
             with db:
                 user = User.create_user(telegram_id=call.from_user.id)
-                user_history = UserHistory.create_history_item(user=user, command=data['command'])
+                user_history = UserHistory.create_history_element(user=user, command=data['command'])
                 HistoryContent.create_history_content(history_item=user_history, hotels=data['results'])
+                UserHistory.delete_history_element(user)
             bot.edit_message_text('Вот что удалось найти:',
                                   call.message.chat.id, call.message.message_id,
                                   reply_markup=keyboard_for_hotels(results, 'hotel'))
