@@ -27,7 +27,7 @@ def search_hotels_by_filters(region_id: str, num_of_results: int, sort: str, che
     hotels = _properties_request(region_id=region_id, check_in_date=check_in_date, check_out_date=check_out_date,
                                  min_price=min_price, max_price=max_price)
     if sort == 'PRICE_LOW_TO_HIGH':
-        hotels = hotels[0:num_of_results + 1]
+        hotels = hotels[0:num_of_results]
     elif sort == 'PRICE_HIGH_TO_LOW':
         hotels = _sort_high_to_low(hotels=hotels, num_of_results=num_of_results)
     elif sort == 'BEST_DEAL':

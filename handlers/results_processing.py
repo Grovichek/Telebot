@@ -29,8 +29,7 @@ def results_processing(call: CallbackQuery) -> None:
             bot.edit_message_text('Ничего не найдено, попробуй ещё раз',
                                   call.message.chat.id, call.message.message_id, reply_markup=main_menu_kb())
         try:
-            results = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
-            data['results'] = results
+            data['results'] = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
             with db:
                 user = User.create_user(telegram_id=call.from_user.id)
                 user_history = UserHistory.create_history_element(user=user, command=data['command'])
@@ -38,7 +37,7 @@ def results_processing(call: CallbackQuery) -> None:
                 UserHistory.delete_history_element(user)
             bot.edit_message_text('Вот что удалось найти:',
                                   call.message.chat.id, call.message.message_id,
-                                  reply_markup=keyboard_for_hotels(results, 'hotel'))
+                                  reply_markup=keyboard_for_hotels(data['results'], 'hotel'))
         except ApiException:
             bot.edit_message_text('Сервер гонит, попробуй ещё раз',
                                   call.message.chat.id, call.message.message_id, reply_markup=main_menu_kb())

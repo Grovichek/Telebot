@@ -10,7 +10,7 @@ def history(call: CallbackQuery):
     """Выводит клавиатуру с историей"""
     with db:
         user_history = UserHistory.get_list_of_history_elements(call.from_user.id)
-    bot.edit_message_text(f'типа вот',
+    bot.edit_message_text(f'История ваших запросов',
                           call.message.chat.id, call.message.message_id,
                           reply_markup=keyboard_for_history(prefix='history_item', user_history=user_history))
 
