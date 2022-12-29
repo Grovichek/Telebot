@@ -6,6 +6,14 @@ from database.common.models import User, UserHistory, HistoryContent, Image, db
 
 
 def create_history_element(db: db, telegram_id: int, command: str, hotels: list[HotelInfo]) -> None:
+    """
+    Создаёт элемент истории для пользователя по его telegram id
+    :param db: база данных
+    :param telegram_id:
+    :param command: тип сортировки выбранный пользователем
+    :param hotels: список экземпляров HotelInfo
+    :return: ничего
+    """
     with db:
         _create_user(user_id=telegram_id)
         history_element = UserHistory.create(user=telegram_id,
@@ -15,23 +23,41 @@ def create_history_element(db: db, telegram_id: int, command: str, hotels: list[
 
 
 def delete_last_history_element(db: db, telegram_id: int) -> None:
+    """
+    Удаляет самый старый элемент истории пользователя если размер истории превысил HISTORY_SIZE (задаётся в config.py)
+    :param db: база данных
+    :param telegram_id:
+    :return: ничего
+    """
     with db:
-        user_history = get_list_of_history_elements(db, telegram_id)
+        user_history = get_history_elements(db, telegram_id)
         if len(user_history) > HISTORY_SIZE:
             for content_element in _get_history_content(user_history[0]):
-                for image in _get_images_list_by_id(content_element):
+                for image in _get_images_by_id(content_element):
                     Image[image].delete_instance()
                 HistoryContent[content_element].delete_instance()
             UserHistory[user_history[0]].delete_instance()
 
 
-def get_list_of_history_elements(db: db, telegram_id: int) -> list[UserHistory]:
+def get_history_elements(db: db, telegram_id: int) -> list[UserHistory]:
+    """
+    :param db: база данных
+    :param telegram_id:
+    :return: список элементов истории пользователя
+    """
     with db:
         list_of_history_elements = [uh for uh in UserHistory.select().where(UserHistory.user_id == telegram_id)]
         return list_of_history_elements
 
 
-def get_list_of_history_content(db: db, history_element: str) -> list[HotelInfo]:
+def get_history_content(db: db, history_element: str | UserHistory) -> list[HotelInfo]:
+    """
+    Получает из базы данных контент связанный с элементом истории history_element,
+    создаёт список экземпляров HotelInfo
+    :param db: база данных
+    :param history_element: элемент истории (UserHistory или его id)
+    :return: список экземпляров HotelInfo связанных с элементом истории history_element
+    """
     with db:
         results = []
         for history_content_item in HistoryContent.select().where(HistoryContent.user_history_id == history_element):
@@ -50,11 +76,22 @@ def get_list_of_history_content(db: db, history_element: str) -> list[HotelInfo]
 
 
 def _create_user(user_id: int) -> None:
+    """
+    Создаёт пользователя в базе данных если его там небыло
+    :param user_id: telegram id
+    :return: ничего
+    """
     if user_id not in User:
         User.create(telegram_id=user_id)
 
 
 def _create_history_content(history_element: UserHistory, hotels: list[HotelInfo]) -> None:
+    """
+    Сохраняет в базе данных всю информацию из HotelInfo связанную с history_element
+    :param history_element: элемент истории UserHistory
+    :param hotels: список экземпляров HotelInfo
+    :return: ничего
+    """
     for hotel in hotels:
         history_content = HistoryContent.create(user_history=history_element,
                                                 hotel_id=hotel.hotel_id,
@@ -69,11 +106,21 @@ def _create_history_content(history_element: UserHistory, hotels: list[HotelInfo
 
 
 def _get_history_content(history_element: UserHistory) -> list[HistoryContent]:
+    """
+    Получает из базы все элементы HistoryContent связанные с history_element
+    :param history_element: элемент истории UserHistory
+    :return: список из HistoryContent
+    """
     history_content = [history_content_item for history_content_item in
                        HistoryContent.select().where(HistoryContent.user_history_id == history_element)]
     return history_content
 
 
-def _get_images_list_by_id(content: HistoryContent) -> list[Image]:
-    images = [image for image in Image.select().where(Image.history_content_id == content)]
+def _get_images_by_id(history_content: HistoryContent) -> list[Image]:
+    """
+    Получает из базы все элементы Image связанные с history_content
+    :param history_content:
+    :return:
+    """
+    images = [image for image in Image.select().where(Image.history_content_id == history_content)]
     return images

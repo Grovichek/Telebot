@@ -6,10 +6,10 @@ if not find_dotenv():
 else:
     load_dotenv()
 
-MAX_NUM_OF_RESULTS = 15
-MAX_NUM_OF_PHOTOS = 10
+MAX_NUM_OF_RESULTS = 15  # Максимальное количество отображаемых результатов
+MAX_NUM_OF_PHOTOS = 10  # Максимальное количество отображаемых фотографий (не более 10)
 
-HISTORY_SIZE = 5
+HISTORY_SIZE = 5  # Размер истории просмотров
 
 HOTELS_API_URL = 'https://hotels4.p.rapidapi.com'
 BOT_TOKEN = os.getenv('BOT_TOKEN')

@@ -56,6 +56,7 @@ def _locations_request(query: str) -> dict:
 
 def _parse_cities(locations: dict) -> list[City]:
     """
+    Парсит JSON с сервера, возвращает список экземпляров City(city_id: int, city_name: str)
     :param locations: json с сервера
     :return: Список именованных кортежей City
     """

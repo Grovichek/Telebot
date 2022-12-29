@@ -69,12 +69,11 @@ def show_selected_hotel(call: CallbackQuery) -> None:
 
 @bot.callback_query_handler(func=lambda call: call.data == 'go_back')
 def go_back(call: CallbackQuery) -> None:
-    """Возврат к результатам"""
+    """Возврат к результатам,
+    выводит клавиатуру с найденными отелями"""
     with bot.retrieve_data(call.message.chat.id) as data:
-        try:
+        if 'images' in data:
             [bot.delete_message(call.message.chat.id, i.message_id) for i in data['images']]
-        except KeyError:
-            pass
         bot.edit_message_text('Вот что удалось найти',
                               call.message.chat.id, call.message.message_id,
                               reply_markup=keyboard_for_hotels(data['results'], 'hotel'))

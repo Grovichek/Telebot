@@ -20,7 +20,6 @@ async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int):
         tasks.append(
             asyncio.create_task(_detail_request(hotel_id=hotel.hotel_id, num_of_images=num_of_images, hotel=hotel)))
     results = await asyncio.gather(*tasks)
-    # TODO Не понимаю почему пайчарм ругается
     return results
 
 
@@ -63,6 +62,7 @@ async def _detail_request(hotel_id: str, num_of_images: int, hotel: HotelInfo) -
 
 async def _update_hotel(property_info: dict, num_of_images: int, hotel: HotelInfo) -> HotelInfo:
     """
+    Принимает ранее созданные экземпляры карточек отелей и дополняет их
     :param property_info: json с сервера
     :param num_of_images: необходимое количество фотографий
     :param hotel: экземпляр HotelInfo
