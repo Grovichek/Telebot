@@ -9,12 +9,11 @@ else:
 MAX_NUM_OF_RESULTS = 15
 MAX_NUM_OF_PHOTOS = 10
 
-HISTORY_SIZE = 2
+HISTORY_SIZE = 5
 
 HOTELS_API_URL = 'https://hotels4.p.rapidapi.com'
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 RAPID_API_KEY = os.getenv('RAPID_API_KEY')
 DEFAULT_COMMANDS = (
     ('start', "Запустить бота"),
-    ('help', "Вывести справку")
 )

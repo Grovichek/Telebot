@@ -8,7 +8,8 @@ from keyboards.inline.go_back_kb import go_back_kb
 from keyboards.inline.hotels_kb import keyboard_for_hotels
 from keyboards.inline.main_menu_kb import main_menu_kb
 from loader import bot
-from database.models.base import *
+from database.utils import CRUD
+from database.common.models import db
 
 
 def results_processing(call: CallbackQuery) -> None:
@@ -31,17 +32,18 @@ def results_processing(call: CallbackQuery) -> None:
         try:
             data['results'] = asyncio.run(get_hotels_detail(hotels=hotels, num_of_images=data['num_of_photos']))
             with db:
-                user = User.create_user(telegram_id=call.from_user.id)
-                user_history = UserHistory.create_history_element(user=user, command=data['command'])
-                HistoryContent.create_history_content(history_item=user_history, hotels=data['results'])
-                UserHistory.delete_history_element(user)
+                CRUD.create_history_element(db=db, telegram_id=call.from_user.id,
+                                            command=data['command'], hotels=data['results'])
+                CRUD.delete_last_history_element(db=db, telegram_id=call.from_user.id)
             bot.edit_message_text('Вот что удалось найти:',
                                   call.message.chat.id, call.message.message_id,
                                   reply_markup=keyboard_for_hotels(data['results'], 'hotel'))
         except ApiException:
             bot.edit_message_text('Сервер гонит, попробуй ещё раз',
                                   call.message.chat.id, call.message.message_id, reply_markup=main_menu_kb())
-
+        except AttributeError:
+            bot.edit_message_text('Ничего не найдено, попробуй ещё раз',
+                                  call.message.chat.id, call.message.message_id, reply_markup=main_menu_kb())
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('hotel'))
 def show_selected_hotel(call: CallbackQuery) -> None:
