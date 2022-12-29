@@ -45,6 +45,7 @@ def results_processing(call: CallbackQuery) -> None:
             bot.edit_message_text('Ничего не найдено, попробуй ещё раз',
                                   call.message.chat.id, call.message.message_id, reply_markup=main_menu_kb())
 
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith('hotel'))
 def show_selected_hotel(call: CallbackQuery) -> None:
     """Выводит фотографии и карточку выбранного отеля,

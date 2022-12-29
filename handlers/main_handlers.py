@@ -11,7 +11,7 @@ from keyboards.inline.distance_kb import distance_kb
 from loader import bot
 from states.my_states import MainStates
 from keyboards.inline.cities_kb import keyboard_for_cities
-from keyboards.inline.num_kd import num_keyboard
+from keyboards.inline.num_kb import num_keyboard
 from keyboards.inline.yes_no_kd import yes_no_keyboard
 from keyboards.inline.change_price_kb import change_price_kb
 from api_services.hotels.get_locations import get_cities_by_query

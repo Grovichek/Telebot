@@ -7,7 +7,7 @@ from config_data.config import HOTELS_API_URL, RAPID_API_KEY
 from exceptions import ApiException
 
 
-async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int) -> list[HotelInfo]:
+async def get_hotels_detail(hotels: list[HotelInfo], num_of_images: int):
     """
     Класс HotelInfo создаётся в модуле get_properties.py, тут он дополняется
     :param hotels: список экземпляров HotelInfo

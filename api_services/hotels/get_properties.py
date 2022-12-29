@@ -73,9 +73,6 @@ def _properties_request(region_id: str, check_in_date: date, check_out_date: dat
     Ищет отели по множеству фильтров
     :param region_id: id региона полученный из get_locations_by_query()
     :param num_of_results: максимальное количество отелей, которое нужно найти
-    :param sort: ключ сортировки PRICE_RELEVANT (Цена + наш выбор), REVIEW (Оценка гостей),PRICE_LOW_TO_HIGH (цена),
-                                 DISTANCE (Расстояние от центра города),PROPERTY_CLASS (количество звезд),
-                                 RECOMMENDED (Рекомендовано)
     :param check_in_date: Дата заселения
     :param check_out_date: Дата выселения
     :param min_price: минимальная цена за ночь
