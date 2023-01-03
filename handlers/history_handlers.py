@@ -1,10 +1,10 @@
 from telebot.types import CallbackQuery
 
+from database.common.models import db
+from database.utils import CRUD
 from keyboards.inline.history_kb import keyboard_for_history
 from keyboards.inline.hotels_kb import keyboard_for_hotels
 from loader import bot
-from database.utils import CRUD
-from database.common.models import db
 
 
 def history(call: CallbackQuery):

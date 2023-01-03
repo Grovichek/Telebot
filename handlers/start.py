@@ -1,8 +1,8 @@
 from telebot.types import Message, CallbackQuery
-from states.my_states import MainStates
 
 from keyboards.inline.main_menu_kb import main_menu_kb
 from loader import bot
+from states.my_states import MainStates
 
 
 @bot.message_handler(commands=['start'])

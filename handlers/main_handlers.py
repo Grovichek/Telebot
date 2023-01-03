@@ -1,20 +1,20 @@
-from telebot.types import Message, CallbackQuery
-from telegram_bot_calendar import WYearTelegramCalendar
 from datetime import date, timedelta
 
-from config_data.config import MAX_NUM_OF_RESULTS, MAX_NUM_OF_PHOTOS
+from telebot.types import Message, CallbackQuery
+from telegram_bot_calendar import WYearTelegramCalendar
 
+from api_services.hotels.get_locations import get_cities_by_query
+from config_data.config import MAX_NUM_OF_RESULTS, MAX_NUM_OF_PHOTOS
 from exceptions import ApiException
 from handlers.history_handlers import history
 from handlers.results_processing import results_processing
-from keyboards.inline.distance_kb import distance_kb
-from loader import bot
-from states.my_states import MainStates
+from keyboards.inline.change_price_kb import change_price_kb
 from keyboards.inline.cities_kb import keyboard_for_cities
+from keyboards.inline.distance_kb import distance_kb
 from keyboards.inline.num_kb import num_keyboard
 from keyboards.inline.yes_no_kd import yes_no_keyboard
-from keyboards.inline.change_price_kb import change_price_kb
-from api_services.hotels.get_locations import get_cities_by_query
+from loader import bot
+from states.my_states import MainStates
 
 
 # ТЗ
@@ -174,6 +174,8 @@ def get_num_of_results(call: CallbackQuery) -> None:
 @bot.callback_query_handler(func=lambda call: call.data.startswith('is_show_photo_yes'))
 def yes(call: CallbackQuery) -> None:
     """Запрашивает необходимое количество фото"""
+    with bot.retrieve_data(call.message.chat.id) as data:
+        data['show_images'] = True
     bot.edit_message_text("Сколько фото для каждого отеля загрузить?",
                           call.message.chat.id, call.message.message_id,
                           reply_markup=num_keyboard(MAX_NUM_OF_PHOTOS, 'num_of_photos'))

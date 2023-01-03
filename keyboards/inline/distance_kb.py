@@ -2,6 +2,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def distance_kb(prefix=str) -> InlineKeyboardMarkup:
+    """Клавиатура для выбора максимальной дистанции от центра"""
     keyboard = InlineKeyboardMarkup()
     keyboard.row_width = 3
     keyboard.add(

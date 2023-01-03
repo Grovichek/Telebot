@@ -2,6 +2,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def change_price_kb(prefix=str) -> InlineKeyboardMarkup:
+    """Клавиатура для выбора диапазона цен"""
     keyboard = InlineKeyboardMarkup()
     keyboard.row_width = 3
     keyboard.add(

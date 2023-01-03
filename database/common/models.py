@@ -1,4 +1,5 @@
 import os
+
 from peewee import *
 
 db = SqliteDatabase(os.path.join("database", "data.db"))

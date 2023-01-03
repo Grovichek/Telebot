@@ -1,4 +1,5 @@
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+
 from api_services.hotels.get_locations import get_cities_by_query
 
 

@@ -1,15 +1,16 @@
 import asyncio
+
 from telebot.types import CallbackQuery, InputMediaPhoto
 
 from api_services.hotels.get_detail import get_hotels_detail
 from api_services.hotels.get_properties import search_hotels_by_filters
+from database.common.models import db
+from database.utils import CRUD
 from exceptions import ApiException
 from keyboards.inline.go_back_kb import go_back_kb
 from keyboards.inline.hotels_kb import keyboard_for_hotels
 from keyboards.inline.main_menu_kb import main_menu_kb
 from loader import bot
-from database.utils import CRUD
-from database.common.models import db
 
 
 def results_processing(call: CallbackQuery) -> None:
@@ -51,9 +52,11 @@ def show_selected_hotel(call: CallbackQuery) -> None:
     """Выводит фотографии и карточку выбранного отеля,
         также выводит клавиатуру с предложением вернуться назад"""
     with bot.retrieve_data(call.message.chat.id) as data:
+        data['show_images'] = False
         for hotel in data['results']:
             if hotel.hotel_id == call.data.lstrip('hotel'):
                 if hotel.images:
+                    data['show_images'] = True
                     data['images'] = bot.send_media_group(call.message.chat.id,
                                                           [InputMediaPhoto(i) for i in hotel.images])
 
@@ -72,7 +75,7 @@ def go_back(call: CallbackQuery) -> None:
     """Возврат к результатам,
     выводит клавиатуру с найденными отелями"""
     with bot.retrieve_data(call.message.chat.id) as data:
-        if 'images' in data:
+        if data['show_images']:
             [bot.delete_message(call.message.chat.id, i.message_id) for i in data['images']]
         bot.edit_message_text('Вот что удалось найти',
                               call.message.chat.id, call.message.message_id,

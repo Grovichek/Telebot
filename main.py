@@ -1,6 +1,6 @@
+from telebot.custom_filters import StateFilter
 import handlers
 from loader import bot
-from telebot.custom_filters import StateFilter
 from utils.set_bot_commands import set_default_commands
 
 if __name__ == '__main__':

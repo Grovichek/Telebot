@@ -2,6 +2,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def keyboard_for_history(prefix, user_history) -> InlineKeyboardMarkup:
+    """Выводит историю"""
     keyboard = InlineKeyboardMarkup()
     keyboard.row_width = 8
     keyboard.row_width = 1

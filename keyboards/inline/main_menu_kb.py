@@ -2,6 +2,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def main_menu_kb() -> InlineKeyboardMarkup:
+    """Стартовое меню"""
     keyboard = InlineKeyboardMarkup()
     keyboard.row_width = 1
     keyboard.add(InlineKeyboardButton("Топ дешёвых отелей", callback_data="startlow_price"),
